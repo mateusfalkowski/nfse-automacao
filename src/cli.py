@@ -44,6 +44,15 @@ def confirmar(dados: dict) -> bool:
 
 
 def main() -> int:
+    # No Windows o stdin/stdout às vezes vem em cp1252 em vez de UTF-8
+    # (depende do terminal/como o script é chamado), o que corrompe
+    # acentuação digitada (ex: "inspeção" virando "inspeÃ§Ã£o") — e isso vai
+    # pro campo de descrição da nota de verdade, não é só cosmético. Força
+    # UTF-8 pra não depender da configuração de quem roda.
+    for stream in (sys.stdin, sys.stdout):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+
     parser = argparse.ArgumentParser(description="Automação de emissão de NFS-e (MEI)")
     parser.add_argument(
         "--auto",

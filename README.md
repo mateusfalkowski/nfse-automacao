@@ -44,8 +44,9 @@ os valores fixos já vêm certos por padrão).
 
 ### Estado dos seletores (`src/nfse_bot.py`)
 
-Todas as 4 etapas mapeadas e implementadas, testado ao vivo até a tela final
-sem clicar em emitir (2026-09-18, nota de teste pro Cosmos, R$1,00):
+**Confirmado rodando `python -m src.cli` de verdade** (não só manualmente): as
+4 etapas passam sem erro e o dry-run chega até a tela real de
+`DPS/EmitirNFSe` (2026-09-19, nota de teste pro Cosmos, R$1,00).
 
 - ✅ Etapa 1 — **Pessoas**: IBS/CBS, competência, tomador (CNPJ com busca
   automática de nome/endereço), botão avançar.
@@ -57,20 +58,29 @@ sem clicar em emitir (2026-09-18, nota de teste pro Cosmos, R$1,00):
   vêm travados certos pro Simples Nacional. Precisa escolher "Não informar
   nenhum valor estimado" nos Tributos aproximados (campo obrigatório).
 - ✅ Etapa 4 — **Nota**: botão final é `btnProsseguir` ("Emitir NFS-e") — só
-  clicado se `dry_run=False`.
+  clicado se `dry_run=False`. **Nunca testado de verdade** (só chegou na
+  tela via dry-run) — a primeira vez com `--auto` merece atenção redobrada.
 
-Achados importantes:
-- Interações via JavaScript puro (sem passar por um clique/tecla de verdade)
-  **não** disparam a busca de CNPJ nem a revelação de alguns campos — use
-  sempre `.click()`/`.send_keys()` do Selenium (like the code already does),
-  nunca `execute_script` pra simular clique.
+Achados importantes (todos custaram várias rodadas de debug pra descobrir):
+- **A competência tem que ser escolhida no calendário de verdade, nunca
+  digitada no campo de texto** — digitar deixa o valor certo visualmente,
+  mas os dados do emitente (nome, Simples Nacional, município) nunca
+  carregam, e o formulário inteiro fica travado sem erro nenhum visível.
+- Rádios têm o `<input>` escondido atrás de um estilo customizado — clicar
+  precisa ser no `<label>` pai, nunca no input (`element not interactable`).
+- "Compras Governamentais" não tem asterisco de obrigatório e fica
+  desabilitado até o tomador ser identificado — não precisa mexer nele.
 - "Item da NBS" aparece com * mas não bloqueia o avançar em branco.
+- Preencher um campo costuma reposicionar coisas na tela (ex: endereço do
+  tomador aparecendo depois da busca de CNPJ) — todo clique passa por
+  `_clicar()`, que rola até o elemento e espera um instante antes de clicar,
+  senão o clique cai em cima de outra coisa.
 - Combobox de Município/Código de Tributação são select2 (busca com clique
   + digitação + clique na opção) — ver `_select2_escolher()`.
-
-Ainda não testado: rodar isso de fato via Selenium (só testei manualmente no
-navegador embutido do Claude). O nome dos métodos/seletores deve estar
-certo, mas vale conferir no primeiro run real.
+- Interações via JavaScript puro (`execute_script` simulando clique) não
+  disparam vários desses comportamentos — só clique/tecla de verdade do
+  Selenium funciona (é basicamente a mesma lição da competência, mas vale
+  lembrar antes de "otimizar" qualquer clique daqui.
 
 Todo run grava duas linhas em `logs/nfse_emissoes.jsonl` (antes e depois de
 cada tentativa), pra ter rastro mesmo se o processo falhar no meio.
