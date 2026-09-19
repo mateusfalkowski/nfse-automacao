@@ -85,6 +85,20 @@ class NFSeBot:
         formato sugerido no prompt do cli.py, tipo 1500.00), converte."""
         return valor if "," in valor else valor.replace(".", ",")
 
+    def _somente_digitos(self, texto: str) -> str:
+        return "".join(c for c in texto if c.isdigit())
+
+    def _fechar_confirm_se_houver(self) -> None:
+        """Alguns CNPJs/CEPs disparam um popup de confirmação (jconfirm) —
+        ex: dados cadastrais desatualizados/inconsistentes na Receita. Aceita
+        se aparecer; se não aparecer em 2s, segue em frente normalmente."""
+        try:
+            WebDriverWait(self.driver, 2).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, ".jconfirm-buttons button"))
+            ).click()
+        except TimeoutException:
+            pass
+
     def _avancar(self) -> None:
         self._clicar(self.driver.find_element(By.XPATH, '//*[self::button or self::a][contains(., "Avançar")]'))
 
@@ -129,8 +143,18 @@ class NFSeBot:
             )
         except TimeoutException:
             pass
+        self._fechar_confirm_se_houver()
         if not self.driver.find_element(By.ID, "Tomador_Nome").get_attribute("value"):
             self.driver.find_element(By.ID, "Tomador_Nome").send_keys(dados["tomador_nome"])
+
+        # TODO: pra alguns tomadores (ex: Condomínio Brasília) o CEP que vem
+        # da busca por CNPJ está desatualizado na Receita Federal. Tentei
+        # sobrescrever aqui, mas o campo `Tomador_EnderecoNacional_CEP` usa
+        # uma máscara "00.000-000" (com ponto) diferente do padrão brasileiro
+        # "00000-000", e buscar CEP nesse formato sempre retorna "CEP
+        # inválido" no site — parece bug/particularidade do formulário deles
+        # nesse campo específico. Por enquanto, corrija esses casos
+        # manualmente na tela depois que o script preencher o resto.
 
         self._avancar()
 
@@ -154,7 +178,7 @@ class NFSeBot:
         # tomador como endereço da obra (é o prédio onde o serviço é feito).
         if dados.get("tomador_endereco_cep"):
             self._set_radio("Obra.TipoInformacao", "3")  # "Endereço no Brasil"
-            self.driver.find_element(By.ID, "Obra_CEP").send_keys(dados["tomador_endereco_cep"])
+            self.driver.find_element(By.ID, "Obra_CEP").send_keys(self._somente_digitos(dados["tomador_endereco_cep"]))
             self.driver.find_element(By.ID, "btn_Obra_CEP").click()
             self.wait.until(lambda d: d.find_element(By.ID, "Obra_Bairro").get_attribute("value"))
             if dados.get("tomador_endereco_numero"):

@@ -101,6 +101,7 @@
   button.primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); font-weight: 600; }
   #resumo { margin-top: 14px; }
   #resumoTexto { min-height: 190px; font-family: ui-monospace, Consolas, monospace; font-size: 0.82rem; white-space: pre; }
+  #btnCopiar { width: 100%; margin-top: 10px; padding: 16px; font-size: 1.15rem; }
   #copiado { font-size: 0.8rem; color: var(--accent); margin-left: 4px; visibility: hidden; }
   #valorTotal { font-weight: 600; }
 </style>
@@ -170,8 +171,9 @@
   </div>
 
   <div id="resumo" style="display:none;">
-    <label for="resumoTexto">Resumo (selecione e copie)<span id="copiado">copiado!</span></label>
+    <label for="resumoTexto">Resumo<span id="copiado">copiado!</span></label>
     <textarea id="resumoTexto" readonly onclick="this.select()"></textarea>
+    <button onclick="copiarResumo()" class="primary" id="btnCopiar">Copiar</button>
   </div>
 </div>
 
@@ -260,9 +262,14 @@ function gerarResumo() {
   document.getElementById('resumoTexto').value = linhas.join('\n');
   document.getElementById('resumo').style.display = 'block';
 
+  copiarResumo();
+}
+
+function copiarResumo() {
+  const texto = document.getElementById('resumoTexto').value;
+  const aviso = document.getElementById('copiado');
   try {
-    navigator.clipboard.writeText(linhas.join('\n'));
-    const aviso = document.getElementById('copiado');
+    navigator.clipboard.writeText(texto);
     aviso.style.visibility = 'visible';
     setTimeout(() => aviso.style.visibility = 'hidden', 2000);
   } catch (e) {}
