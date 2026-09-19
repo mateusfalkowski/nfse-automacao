@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional
 
-LOG_PATH = Path(__file__).resolve().parent.parent / "logs" / "nfse_emissoes.jsonl"
+from .config import PROJECT_ROOT
+
+LOG_PATH = PROJECT_ROOT / "logs" / "nfse_emissoes.jsonl"
 
 
 def _append(entry: dict) -> None:

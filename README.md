@@ -13,9 +13,10 @@ Site publicado: https://mateusfalkowski.github.io/nfse-automacao/formulario.html
 1. Preenche o [`formulario.html`](formulario.html) no celular/PC.
 2. Clica em **"Enviar por WhatsApp"** — abre o WhatsApp com o resumo pronto
    pra mandar pra quem for rodar o script.
-3. Quem recebe roda `python -m src.cli`, escolhe a opção **"Colar resumo"**,
-   cola a mensagem do WhatsApp e termina com uma linha `---`. O script separa
-   os campos sozinho — não precisa digitar nada de novo.
+3. Quem recebe roda `python -m src.cli` (ou o `EmitirNFSe.exe`, veja abaixo),
+   escolhe a opção **"Colar resumo"**, cola a mensagem do WhatsApp e termina
+   com uma linha `---`. O script separa os campos sozinho — não precisa
+   digitar nada de novo.
 
 ## Script Python/Selenium (em andamento)
 
@@ -50,6 +51,23 @@ os valores fixos já vêm certos por padrão).
    python -m src.cli --auto --yes # sem confirmação no terminal (uso avançado)
    ```
 
+### Gerar um .exe (pra rodar sem precisar de Python instalado)
+
+Útil pra rodar em outro PC, ou só pra abrir com 2 cliques em vez de terminal.
+
+```bash
+pip install -r requirements-build.txt
+pyinstaller --onefile --console --name EmitirNFSe --collect-submodules=selenium run.py
+```
+
+O `.exe` fica em `dist/EmitirNFSe.exe`. Ele lê `config/settings.yaml` e grava
+`logs/` sempre na mesma pasta ONDE O .EXE ESTÁ (não onde foi gerado) — copie
+a pasta `config/` (com `settings.yaml` preenchido) pra perto dele antes de
+rodar. Os passos de uso são os mesmos do script (Chrome com depuração remota
++ login manual antes).
+
+Não é comitado no repo (é grande e sempre pode ser gerado de novo a partir
+do código) — gere localmente quando precisar de uma cópia nova.
 Rodando assim, direto no terminal, não usa Claude nem gasta tokens — é só
 Python/Selenium na sua máquina.
 

@@ -1,11 +1,22 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+def _project_root() -> Path:
+    """Pasta onde ficam config/ e logs/. Quando rodando como .exe (PyInstaller
+    --onefile), __file__ aponta pra uma pasta temporária de extração — usa a
+    pasta do próprio .exe nesse caso."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent.parent
+
+
+PROJECT_ROOT = _project_root()
 SETTINGS_PATH = PROJECT_ROOT / "config" / "settings.yaml"
 
 
