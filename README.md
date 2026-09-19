@@ -44,21 +44,33 @@ os valores fixos já vêm certos por padrão).
 
 ### Estado dos seletores (`src/nfse_bot.py`)
 
-Mapeados inspecionando o HTML real do assistente de emissão (2026-09-18):
+Todas as 4 etapas mapeadas e implementadas, testado ao vivo até a tela final
+sem clicar em emitir (2026-09-18, nota de teste pro Cosmos, R$1,00):
 
-- ✅ Etapa 1 — **Pessoas**: IBS/CBS, competência, tomador (CNPJ/nome), botão
-  avançar. Detalhe: `PreencherInfoIBSCBS` precisa ser respondido antes do
-  campo de competência ficar habilitado; o checkbox de endereço do tomador
-  parece ter estilo customizado (não confirmado se `.click()` do Selenium
-  funciona nele).
-- ⬜ Etapa 2 — **Serviço**: não inspecionada ainda.
-- ⬜ Etapa 3 — **Valores**: não inspecionada ainda.
-- ⬜ Etapa 4 — **Nota** (botão final de emitir): não inspecionada ainda.
+- ✅ Etapa 1 — **Pessoas**: IBS/CBS, competência, tomador (CNPJ com busca
+  automática de nome/endereço), botão avançar.
+- ✅ Etapa 2 — **Serviço**: município (combobox com busca), código de
+  tributação (combobox com busca), descrição, e "Informações para Obra"
+  (usa o endereço do tomador — só aparece pra códigos de construção/reforma
+  como o 07.05.01).
+- ✅ Etapa 3 — **Valores**: valor do serviço; ISSQN e Tributação Federal já
+  vêm travados certos pro Simples Nacional. Precisa escolher "Não informar
+  nenhum valor estimado" nos Tributos aproximados (campo obrigatório).
+- ✅ Etapa 4 — **Nota**: botão final é `btnProsseguir` ("Emitir NFS-e") — só
+  clicado se `dry_run=False`.
 
-Pra completar as etapas que faltam: com o Chrome já conectado e a etapa
-Pessoas preenchida, inspecionar a próxima tela do mesmo jeito (JS no console:
-`Array.from(document.querySelectorAll('input,select,textarea,button')).map(...)`
-pra listar id/name/type de cada campo).
+Achados importantes:
+- Interações via JavaScript puro (sem passar por um clique/tecla de verdade)
+  **não** disparam a busca de CNPJ nem a revelação de alguns campos — use
+  sempre `.click()`/`.send_keys()` do Selenium (like the code already does),
+  nunca `execute_script` pra simular clique.
+- "Item da NBS" aparece com * mas não bloqueia o avançar em branco.
+- Combobox de Município/Código de Tributação são select2 (busca com clique
+  + digitação + clique na opção) — ver `_select2_escolher()`.
+
+Ainda não testado: rodar isso de fato via Selenium (só testei manualmente no
+navegador embutido do Claude). O nome dos métodos/seletores deve estar
+certo, mas vale conferir no primeiro run real.
 
 Todo run grava duas linhas em `logs/nfse_emissoes.jsonl` (antes e depois de
 cada tentativa), pra ter rastro mesmo se o processo falhar no meio.
