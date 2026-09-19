@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -31,19 +33,37 @@ class NFSeBot:
         self.wait = WebDriverWait(self.driver, 20)
 
     def abrir_nova_nfse(self) -> None:
+        # driver.get() bloqueia até o carregamento terminar, então os campos
+        # já existem quando o método retorna (ao contrário de clicar num
+        # link do dashboard, que não espera a navegação acontecer).
         self.driver.get(self.settings.url_emissao)
+        self.wait.until(EC.presence_of_element_located((By.ID, "PreencherInfoIBSCBS")))
+
+    def _clicar(self, elemento) -> None:
+        """Rola até o elemento e dá uma folga antes de clicar. Preencher um
+        campo costuma expandir/mover outras seções da tela logo em seguida
+        (ex: endereço do tomador aparecendo após a busca por CNPJ), o que faz
+        um clique imediato cair em cima do elemento errado."""
+        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'})", elemento)
+        time.sleep(0.5)
+        elemento.click()
 
     def _set_radio(self, name: str, valor: str) -> None:
-        self.driver.find_element(By.CSS_SELECTOR, f'input[name="{name}"][value="{valor}"]').click()
+        # O <input> em si é escondido pelo estilo custom do rádio (fica dentro
+        # de <label><input>Texto<span class="cr">...</span></label>, sem
+        # atributo for) — o Selenium recusa clicar nele direto ("element not
+        # interactable"). Clica no <label> pai, que é o que está visível.
+        # Alguns desses radios (ex: Compras Governamentais) começam
+        # desabilitados até outra parte da tela terminar de carregar — espera
+        # ficar habilitado antes de clicar, senão dá o mesmo erro.
+        input_el = self.driver.find_element(By.CSS_SELECTOR, f'input[name="{name}"][value="{valor}"]')
+        self.wait.until(lambda d: not input_el.get_attribute("disabled"))
+        self._clicar(input_el.find_element(By.XPATH, ".."))
 
     def _click_radio_by_label(self, texto: str) -> None:
-        """Clica no radio associado a um <label> que contenha esse texto.
-        Mais robusto que adivinhar o value numérico de cada opção."""
-        label = self.driver.find_element(By.XPATH, f'//label[contains(normalize-space(.), "{texto}")]')
-        try:
-            label.find_element(By.TAG_NAME, "input").click()
-        except Exception:
-            self.driver.find_element(By.ID, label.get_attribute("for")).click()
+        """Clica no <label> que contenha esse texto (não no <input>, que
+        costuma estar escondido por trás do estilo custom do rádio)."""
+        self._clicar(self.driver.find_element(By.XPATH, f'//label[contains(normalize-space(.), "{texto}")]'))
 
     def _select2_escolher(self, select_id: str, busca: str, contem_texto: str) -> None:
         """Abre um combobox select2 (busca com AJAX/filtro local), digita e
@@ -60,29 +80,55 @@ class NFSeBot:
         )
         opcao.click()
 
+    def _valor_br(self, valor: str) -> str:
+        """O site espera vírgula decimal (1500,00). Se vier com ponto (o
+        formato sugerido no prompt do cli.py, tipo 1500.00), converte."""
+        return valor if "," in valor else valor.replace(".", ",")
+
     def _avancar(self) -> None:
-        self.driver.find_element(By.XPATH, '//*[self::button or self::a][contains(., "Avançar")]').click()
+        self._clicar(self.driver.find_element(By.XPATH, '//*[self::button or self::a][contains(., "Avançar")]'))
 
     def preencher_pessoas(self, dados: dict) -> None:
         """Etapa 1 (Pessoas)."""
         # IBS/CBS precisa ser respondido ANTES: é o que libera o campo de competência.
         self._set_radio("PreencherInfoIBSCBS", "1" if self.settings.ibs_cbs == "Sim" else "0")
 
-        competencia = self.driver.find_element(By.ID, "DataCompetencia")
-        competencia.clear()
-        competencia.send_keys(dados["competencia"])  # formato DD-MM-AAAA
+        # Importante: tem que ser pelo calendário mesmo, não digitando no
+        # campo de texto. Digitar direto deixa o campo com o valor certo
+        # visualmente, mas os dados do emitente (nome, Simples Nacional,
+        # município) nunca carregam — só populam quando a data é escolhida
+        # pelo próprio widget (achado testando, confirmado pelo usuário).
+        # Só funciona pro mês/ano já exibido no calendário (isto é, "hoje";
+        # não implementa navegar pra outro mês).
+        self.driver.find_element(By.ID, "btn_DataCompetencia").click()
+        dia = dados["competencia"].split("-")[0].lstrip("0")
+        self.wait.until(
+            EC.element_to_be_clickable((
+                By.XPATH,
+                f'//td[contains(@class,"day") and not(contains(@class,"old")) '
+                f'and not(contains(@class,"new")) and normalize-space(text())="{dia}"]',
+            ))
+        ).click()
+        time.sleep(0.5)  # deixa o popup do calendário terminar de fechar
 
         # TipoEmitente já vem em "1" (Prestador/Fornecedor) por padrão.
 
-        # Compras governamentais: default "Não" (caso normal, tomador não é governo).
-        self._click_radio_by_label("Não")
+        # "Compras governamentais" não tem asterisco de obrigatório na tela
+        # (diferente de quase tudo em volta) e o input fica desabilitado até
+        # o tomador ser identificado — não precisa (e não dá pra) mexer nele
+        # pro caso normal (tomador não é órgão público).
 
         self.driver.find_element(By.ID, "Tomador_Inscricao").send_keys(dados["tomador_cnpj_cpf"])
         self.driver.find_element(By.ID, "btn_Tomador_Inscricao_pesquisar").click()
-        self.wait.until(lambda d: d.find_element(By.ID, "Tomador_Nome").get_attribute("value"))
-        # A busca por CNPJ preenche Nome e Endereço automaticamente. Só usa
-        # tomador_nome/tomador_endereco de `dados` se a busca não achar nada
-        # (ex.: CPF de pessoa física, ou CNPJ novo ainda não cadastrado).
+        # Espera curta: se o CNPJ não for encontrado (CPF de pessoa física,
+        # CNPJ novo etc.) o campo nunca preenche sozinho, e não queremos travar
+        # nos 20s do wait padrão nem abortar a execução por causa disso.
+        try:
+            WebDriverWait(self.driver, 4).until(
+                lambda d: d.find_element(By.ID, "Tomador_Nome").get_attribute("value")
+            )
+        except TimeoutException:
+            pass
         if not self.driver.find_element(By.ID, "Tomador_Nome").get_attribute("value"):
             self.driver.find_element(By.ID, "Tomador_Nome").send_keys(dados["tomador_nome"])
 
@@ -95,7 +141,7 @@ class NFSeBot:
             "ServicoPrestado_CodigoTributacaoNacional", dados["codigo_servico"], dados["codigo_servico"]
         )
         # "O serviço é um caso de imunidade/exportação/não incidência?" — Não.
-        self._click_radio_by_label("Não")
+        self._set_radio("ServicoPrestado.HaExportacaoImunidadeNaoIncidencia", "0")
 
         # Item da NBS (*): parece obrigatório na tela mas NÃO bloqueia o
         # Avançar deixado em branco — confirmado testando ao vivo. Não
@@ -107,7 +153,7 @@ class NFSeBot:
         # construção/reforma (caso do 07.05.01). Usamos o endereço do
         # tomador como endereço da obra (é o prédio onde o serviço é feito).
         if dados.get("tomador_endereco_cep"):
-            self._click_radio_by_label("Endereço no Brasil")  # value="3"
+            self._set_radio("Obra.TipoInformacao", "3")  # "Endereço no Brasil"
             self.driver.find_element(By.ID, "Obra_CEP").send_keys(dados["tomador_endereco_cep"])
             self.driver.find_element(By.ID, "btn_Obra_CEP").click()
             self.wait.until(lambda d: d.find_element(By.ID, "Obra_Bairro").get_attribute("value"))
@@ -120,7 +166,7 @@ class NFSeBot:
         """Etapa 3 (Valores/Tributação). ISSQN e Tributação Federal já vêm
         travados e corretos pro Simples Nacional — só falta o valor e a
         declaração de tributos aproximados."""
-        self.driver.find_element(By.ID, "Valores_ValorServico").send_keys(dados["valor"])
+        self.driver.find_element(By.ID, "Valores_ValorServico").send_keys(self._valor_br(dados["valor"]))
         self._click_radio_by_label("Não informar nenhum valor estimado")
         self._avancar()
 

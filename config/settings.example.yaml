@@ -14,9 +14,9 @@ plataforma:
 servico_padrao:
   codigo_servico: "07.05.01"  # confirmado em 6 notas reais: reparação/conservação/reforma de edifícios
   descricao_padrao: ""        # texto padrão da discriminação do serviço, usado como sugestão no prompt
-  issqn_operacao: "Operação Tributável"
-  issqn_retencao: "Não Retido"
   ibs_cbs: "Não"               # nas últimas notas emitidas (inclusive a mais recente), IBS/CBS ficou em branco
+  # ISSQN não entra aqui: pra CNPJ no Simples Nacional o site trava esses
+  # campos sozinho, não tem o que configurar.
 
 navegador:
   # Rode o Chrome manualmente antes com: chrome.exe --remote-debugging-port=9222

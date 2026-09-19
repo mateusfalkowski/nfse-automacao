@@ -22,7 +22,12 @@ def coletar_dados_nota(settings: config.Settings) -> dict:
     return {
         "tomador_cnpj_cpf": prompt("CNPJ/CPF do tomador"),
         "tomador_nome": prompt("Nome/Razão social do tomador"),
-        "tomador_endereco": prompt("Endereço do tomador (opcional)"),
+        # Nome/endereço do tomador normalmente vêm da busca por CNPJ no site;
+        # CEP/número aqui são só pra "Informações para Obra" (etapa Serviço),
+        # que usa o endereço onde o serviço foi prestado — deixe em branco se
+        # não se aplicar ao código de serviço usado.
+        "tomador_endereco_cep": prompt("CEP do local do serviço (obra, opcional)"),
+        "tomador_endereco_numero": prompt("Número do local do serviço (opcional)"),
         "valor": prompt("Valor do serviço (ex: 1500.00)"),
         "descricao": prompt("Descrição do serviço", settings.descricao_padrao),
         "competencia": prompt("Competência (DD-MM-AAAA)", competencia_padrao),

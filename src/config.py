@@ -16,8 +16,6 @@ class Settings:
     url_emissao: str
     codigo_servico_padrao: str
     descricao_padrao: str
-    issqn_operacao: str
-    issqn_retencao: str
     ibs_cbs: str
     debugger_address: str
 
@@ -48,8 +46,6 @@ def load_settings() -> Settings:
         url_emissao=url_emissao,
         codigo_servico_padrao=servico.get("codigo_servico", ""),
         descricao_padrao=servico.get("descricao_padrao", ""),
-        issqn_operacao=servico.get("issqn_operacao", "Operação Tributável"),
-        issqn_retencao=servico.get("issqn_retencao", "Não Retido"),
         ibs_cbs=servico.get("ibs_cbs", "Não"),
         debugger_address=navegador.get("debugger_address", "127.0.0.1:9222"),
     )
