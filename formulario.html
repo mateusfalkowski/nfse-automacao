@@ -102,6 +102,7 @@
   #resumo { margin-top: 14px; }
   #resumoTexto { min-height: 190px; font-family: ui-monospace, Consolas, monospace; font-size: 0.82rem; white-space: pre; }
   #btnCopiar { width: 100%; margin-top: 10px; padding: 16px; font-size: 1.15rem; }
+  #btnWhatsApp { width: 100%; margin-top: 8px; padding: 14px; font-size: 1.05rem; background: #25D366; color: #fff; border-color: #25D366; font-weight: 600; }
   #copiado { font-size: 0.8rem; color: var(--accent); margin-left: 4px; visibility: hidden; }
   #valorTotal { font-weight: 600; }
 </style>
@@ -174,6 +175,7 @@
     <label for="resumoTexto">Resumo<span id="copiado">copiado!</span></label>
     <textarea id="resumoTexto" readonly onclick="this.select()"></textarea>
     <button onclick="copiarResumo()" class="primary" id="btnCopiar">Copiar</button>
+    <button onclick="enviarWhatsApp()" id="btnWhatsApp">Enviar por WhatsApp</button>
   </div>
 </div>
 
@@ -273,6 +275,11 @@ function copiarResumo() {
     aviso.style.visibility = 'visible';
     setTimeout(() => aviso.style.visibility = 'hidden', 2000);
   } catch (e) {}
+}
+
+function enviarWhatsApp() {
+  const texto = document.getElementById('resumoTexto').value;
+  window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
 }
 
 function limpar() {

@@ -6,9 +6,16 @@ separado do repositório do jogo GP Manager de propósito — este repo é
 e `logs/` continuam de fora (`.gitignore`), já que ali entram valores e
 histórico reais de notas.
 
-Site publicado (usa o [`formulario.html`](formulario.html) como referência
-pra preencher manualmente, sem automação nenhuma):
-https://mateusfalkowski.github.io/nfse-automacao/formulario.html
+Site publicado: https://mateusfalkowski.github.io/nfse-automacao/formulario.html
+
+### Fluxo pra quem não mexe com o script (ex: pai/mãe)
+
+1. Preenche o [`formulario.html`](formulario.html) no celular/PC.
+2. Clica em **"Enviar por WhatsApp"** — abre o WhatsApp com o resumo pronto
+   pra mandar pra quem for rodar o script.
+3. Quem recebe roda `python -m src.cli`, escolhe a opção **"Colar resumo"**,
+   cola a mensagem do WhatsApp e termina com uma linha `---`. O script separa
+   os campos sozinho — não precisa digitar nada de novo.
 
 ## Script Python/Selenium (em andamento)
 
@@ -35,12 +42,16 @@ os valores fixos já vêm certos por padrão).
    chrome.exe --remote-debugging-port=9222
    ```
 2. Faça login normalmente em nfse.gov.br nessa janela.
-3. Rode o script:
+3. Rode o script (ele pergunta se você quer colar o resumo do WhatsApp/
+   formulário ou preencher campo a campo):
    ```bash
    python -m src.cli              # dry-run: preenche e tira screenshot, NÃO emite
    python -m src.cli --auto       # emite de verdade
    python -m src.cli --auto --yes # sem confirmação no terminal (uso avançado)
    ```
+
+Rodando assim, direto no terminal, não usa Claude nem gasta tokens — é só
+Python/Selenium na sua máquina.
 
 ### Estado dos seletores (`src/nfse_bot.py`)
 

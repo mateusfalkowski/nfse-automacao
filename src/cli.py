@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from datetime import date
 
@@ -32,6 +33,58 @@ def coletar_dados_nota(settings: config.Settings) -> dict:
         "descricao": prompt("Descrição do serviço", settings.descricao_padrao),
         "competencia": prompt("Competência (DD-MM-AAAA)", competencia_padrao),
         "codigo_servico": prompt("Código do serviço", settings.codigo_servico_padrao),
+    }
+
+
+def ler_bloco_colado() -> str:
+    print(
+        "\nCole abaixo o resumo recebido (do formulario.html/WhatsApp) e "
+        "termine com uma linha só com '---':"
+    )
+    linhas: list[str] = []
+    while True:
+        try:
+            linha = input()
+        except EOFError:
+            break
+        if linha.strip() == "---":
+            break
+        linhas.append(linha)
+    return "\n".join(linhas)
+
+
+def parse_resumo(texto: str, settings: config.Settings) -> dict:
+    """Extrai os campos do texto que o formulario.html gera (label: valor,
+    uma por linha). Formato esperado do "Endereço do tomador":
+    "Logradouro, Numero, Bairro, Cidade/UF, CEP 00.000-000"."""
+    campos = {}
+    for linha in texto.splitlines():
+        if ":" in linha:
+            chave, _, valor = linha.partition(":")
+            campos[chave.strip()] = valor.strip()
+
+    endereco = campos.get("Endereço do tomador", "")
+    partes = [p.strip() for p in endereco.split(",")]
+    numero = partes[1] if len(partes) > 1 else ""
+    cep_match = re.search(r"CEP\s*([\d.\-]+)", endereco)
+    cep = cep_match.group(1) if cep_match else ""
+
+    hoje = date.today()
+    comp_match = re.match(r"(\d{2})/(\d{4})", campos.get("Competência", ""))
+    if comp_match:
+        competencia = f"{hoje.day:02d}-{comp_match.group(1)}-{comp_match.group(2)}"
+    else:
+        competencia = hoje.strftime("%d-%m-%Y")
+
+    return {
+        "tomador_cnpj_cpf": campos.get("CNPJ/CPF do tomador", ""),
+        "tomador_nome": campos.get("Nome do tomador", ""),
+        "tomador_endereco_cep": cep,
+        "tomador_endereco_numero": numero,
+        "valor": campos.get("Valor total do serviço", "").replace("R$", "").strip(),
+        "descricao": campos.get("Descrição do serviço", settings.descricao_padrao),
+        "competencia": competencia,
+        "codigo_servico": campos.get("Código de tributação", settings.codigo_servico_padrao),
     }
 
 
@@ -71,7 +124,13 @@ def main() -> int:
 
     settings = config.load_settings()
 
-    dados_nota = coletar_dados_nota(settings)
+    print("\n[1] Colar resumo recebido (WhatsApp/formulário)  [2] Preencher campo a campo")
+    escolha = input("Escolha [1]: ").strip() or "1"
+    if escolha == "1":
+        dados_nota = parse_resumo(ler_bloco_colado(), settings)
+    else:
+        dados_nota = coletar_dados_nota(settings)
+
     if not args.yes and not confirmar(dados_nota):
         print("Cancelado pelo usuário.")
         return 1
