@@ -9,33 +9,6 @@ from . import audit_log, config
 from .nfse_bot import NFSeBot
 
 
-def prompt(campo: str, default: str = "") -> str:
-    sufixo = f" [{default}]" if default else ""
-    valor = input(f"{campo}{sufixo}: ").strip()
-    return valor or default
-
-
-def coletar_dados_nota(settings: config.Settings) -> dict:
-    hoje = date.today()
-    competencia_padrao = hoje.strftime("%d-%m-%Y")
-
-    print("\n=== Dados da nota (Enter aceita o valor padrão entre colchetes) ===")
-    return {
-        "tomador_cnpj_cpf": prompt("CNPJ/CPF do tomador"),
-        "tomador_nome": prompt("Nome/Razão social do tomador"),
-        # Nome/endereço do tomador normalmente vêm da busca por CNPJ no site;
-        # CEP/número aqui são só pra "Informações para Obra" (etapa Serviço),
-        # que usa o endereço onde o serviço foi prestado — deixe em branco se
-        # não se aplicar ao código de serviço usado.
-        "tomador_endereco_cep": prompt("CEP do local do serviço (obra, opcional)"),
-        "tomador_endereco_numero": prompt("Número do local do serviço (opcional)"),
-        "valor": prompt("Valor do serviço (ex: 1500.00)"),
-        "descricao": prompt("Descrição do serviço", settings.descricao_padrao),
-        "competencia": prompt("Competência (DD-MM-AAAA)", competencia_padrao),
-        "codigo_servico": prompt("Código do serviço", settings.codigo_servico_padrao),
-    }
-
-
 def ler_bloco_colado() -> str:
     print(
         "\nCole abaixo o resumo recebido (do formulario.html/WhatsApp) e "
@@ -123,13 +96,7 @@ def main() -> int:
     args = parser.parse_args()
 
     settings = config.load_settings()
-
-    print("\n[1] Colar resumo recebido (WhatsApp/formulário)  [2] Preencher campo a campo")
-    escolha = input("Escolha [1]: ").strip() or "1"
-    if escolha == "1":
-        dados_nota = parse_resumo(ler_bloco_colado(), settings)
-    else:
-        dados_nota = coletar_dados_nota(settings)
+    dados_nota = parse_resumo(ler_bloco_colado(), settings)
 
     if not args.yes and not confirmar(dados_nota):
         print("Cancelado pelo usuário.")

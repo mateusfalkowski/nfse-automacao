@@ -13,9 +13,9 @@ Site publicado: https://mateusfalkowski.github.io/nfse-automacao/formulario.html
 1. Preenche o [`formulario.html`](formulario.html) no celular/PC.
 2. Clica em **"Enviar por WhatsApp"** — abre o WhatsApp com o resumo pronto
    pra mandar pra quem for rodar o script.
-3. Quem recebe roda `python -m src.cli` (ou o `EmitirNFSe.exe`, veja abaixo),
-   escolhe a opção **"Colar resumo"**, cola a mensagem do WhatsApp e termina
-   com uma linha `---`. O script separa os campos sozinho — não precisa
+3. Quem recebe dá 2 cliques no `EmitirNFSe.bat` (veja "Instalador de arquivo
+   único" abaixo) e cola a mensagem do WhatsApp — ela já vem pronta com a
+   linha `---` no final. O script separa os campos sozinho — não precisa
    digitar nada de novo.
 
 ## Script Python/Selenium (em andamento)
@@ -43,8 +43,8 @@ os valores fixos já vêm certos por padrão).
    chrome.exe --remote-debugging-port=9222
    ```
 2. Faça login normalmente em nfse.gov.br nessa janela.
-3. Rode o script (ele pergunta se você quer colar o resumo do WhatsApp/
-   formulário ou preencher campo a campo):
+3. Rode o script (ele pede pra colar o resumo do WhatsApp/formulário — já vem
+   pronto com a linha `---` no final):
    ```bash
    python -m src.cli              # dry-run: preenche e tira screenshot, NÃO emite
    python -m src.cli --auto       # emite de verdade
@@ -60,16 +60,46 @@ pip install -r requirements-build.txt
 pyinstaller --onefile --console --name EmitirNFSe --collect-submodules=selenium run.py
 ```
 
-O `.exe` fica em `dist/EmitirNFSe.exe`. Ele lê `config/settings.yaml` e grava
-`logs/` sempre na mesma pasta ONDE O .EXE ESTÁ (não onde foi gerado) — copie
-a pasta `config/` (com `settings.yaml` preenchido) pra perto dele antes de
-rodar. Os passos de uso são os mesmos do script (Chrome com depuração remota
-+ login manual antes).
+O `.exe` fica em `dist/EmitirNFSe.exe`. Ele lê `config/settings.yaml` (se não
+existir, cria sozinho a partir de `settings.example.yaml` na primeira vez) e
+grava `logs/` sempre na mesma pasta ONDE O .EXE ESTÁ (não onde foi gerado).
 
 Não é comitado no repo (é grande e sempre pode ser gerado de novo a partir
 do código) — gere localmente quando precisar de uma cópia nova.
 Rodando assim, direto no terminal, não usa Claude nem gasta tokens — é só
 Python/Selenium na sua máquina.
+
+Pra testar rápido sem gerar o instalador de arquivo único (próxima seção)
+toda vez, tem [`IniciarNFSe.bat`](IniciarNFSe.bat) na raiz: mesmo fluxo
+(Chrome + rodar o `.exe`), mas sem o self-extract — só funciona se o
+`EmitirNFSe.exe` já estiver do lado dele.
+
+### Instalador de arquivo único (pra pai/mãe/outro PC)
+
+```bash
+powershell -ExecutionPolicy Bypass -File build_installer.ps1
+```
+
+Gera **`EmitirNFSe.bat`**: um único arquivo (não precisa de zip nem de
+"extrair tudo") que já leva o `EmitirNFSe.exe`, o `LEIA-ME.txt` e o
+`settings.example.yaml` embutidos dentro dele. Quem for usar só precisa desse
+arquivo:
+
+1. Dá 2 cliques em `EmitirNFSe.bat`.
+2. Na primeira vez, ele se auto-extrai do lado de onde está (poucos segundos).
+3. Abre o Chrome com depuração remota, espera você logar (aperta uma tecla pra
+   continuar) e já roda o `EmitirNFSe.exe` em seguida.
+
+Detalhe técnico: o `.bat` carrega o zip com os arquivos codificado em base64
+dentro dele mesmo (texto puro, colado depois de um `exit /b` que o `cmd`
+nunca alcança rodando). Bytes binários "crus" colados direto no arquivo
+quebram o parser do `cmd.exe` mesmo depois do `exit /b` — ele trava em bytes
+NUL do meio do zip antes de executar a primeira linha. Base64 evita isso. Veja
+[`build_installer.ps1`](build_installer.ps1) e [`installer_stub.bat`](installer_stub.bat)
+(o template, sem o payload).
+
+Não é comitado (mesmo motivo do `.exe`) — gere localmente quando precisar de
+uma cópia nova, depois de rodar o `pyinstaller`.
 
 ### Estado dos seletores (`src/nfse_bot.py`)
 

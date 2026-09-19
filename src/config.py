@@ -33,9 +33,16 @@ class Settings:
 
 def load_settings() -> Settings:
     if not SETTINGS_PATH.exists():
-        raise FileNotFoundError(
-            f"{SETTINGS_PATH} não encontrado. Copie config/settings.example.yaml "
-            "para config/settings.yaml e preencha com seus dados."
+        example_path = SETTINGS_PATH.parent / "settings.example.yaml"
+        if not example_path.exists():
+            raise FileNotFoundError(
+                f"{SETTINGS_PATH} não encontrado. Copie config/settings.example.yaml "
+                "para config/settings.yaml e preencha com seus dados."
+            )
+        SETTINGS_PATH.write_text(example_path.read_text(encoding="utf-8"), encoding="utf-8")
+        print(
+            f"(Criei {SETTINGS_PATH.name} a partir do exemplo, já com os valores "
+            "padrão. Pode editar esse arquivo depois se quiser ajustar algo.)"
         )
 
     raw = yaml.safe_load(SETTINGS_PATH.read_text(encoding="utf-8")) or {}

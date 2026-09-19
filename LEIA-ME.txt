@@ -1,0 +1,18 @@
+NFS-e Automation
+================
+
+Dê 2 cliques em "EmitirNFSe.bat" — ele cuida do resto: extrai os
+arquivos (só na primeira vez), abre o Chrome, espera você logar
+(aperta uma tecla pra continuar) e roda o programa.
+
+Cole o resumo recebido do formulário/WhatsApp (ele já vem pronto com o
+"---" no final) e aperta Enter.
+
+Por padrão ele faz um "dry-run" (preenche e para antes de emitir).
+Pra emitir de verdade, feche e rode de novo abrindo um terminal e
+digitando: EmitirNFSe.exe --auto
+
+Formulário pra gerar o resumo:
+https://mateusfalkowski.github.io/nfse-automacao/formulario.html
+
+Dúvidas/bugs: fale com o Mateus.
