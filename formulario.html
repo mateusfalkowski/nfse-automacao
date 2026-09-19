@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Formulário NFS-e</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1c1e21;
+    --muted: #6b7280;
+    --border: #d8dbe0;
+    --accent: #2e7d32;
+    --accent-contrast: #ffffff;
+    --warn-bg: #fff7e6;
+    --warn-border: #f0c36d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1b1e;
+      --card: #242628;
+      --text: #e8e9ea;
+      --muted: #9aa0a6;
+      --border: #3a3d42;
+      --accent: #4caf50;
+      --accent-contrast: #0b0b0b;
+      --warn-bg: #3a3320;
+      --warn-border: #8a6d1f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 60px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 560px;
+    width: 100%;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 0.85rem; margin: 0 0 20px; }
+  .warn {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+  fieldset {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px 18px;
+    margin: 0 0 16px;
+  }
+  legend { font-weight: 600; font-size: 0.9rem; padding: 0 6px; }
+  label { display: block; font-size: 0.82rem; color: var(--muted); margin: 10px 0 4px; }
+  label:first-of-type { margin-top: 0; }
+  input, select, textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  .fixed-item { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 0.88rem; border-bottom: 1px dashed var(--border); }
+  .fixed-item:last-child { border-bottom: none; }
+  .fixed-item span:first-child { color: var(--muted); }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  .topico-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .topico-row .topico-desc { flex: 3; }
+  .topico-row .topico-valor { flex: 1; min-width: 90px; }
+  .topico-row button { flex: none; width: 32px; padding: 6px 0; }
+  .add-topico { margin-top: 2px; }
+  .actions { display: flex; gap: 10px; margin-top: 6px; }
+  button {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); font-weight: 600; }
+  #resumo { margin-top: 14px; }
+  #resumoTexto { min-height: 190px; font-family: ui-monospace, Consolas, monospace; font-size: 0.82rem; white-space: pre; }
+  #copiado { font-size: 0.8rem; color: var(--accent); margin-left: 4px; visibility: hidden; }
+  #valorTotal { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Preenchimento de NFS-e</h1>
+  <p class="sub">Referência pra preencher no nfse.gov.br — não envia nada, é só um rascunho organizado.</p>
+
+  <div class="warn">Confira antes de começar: você está logado com o CNPJ certo? <strong>Mateus</strong> (61.827.278/0001-21) ou <strong>Marcio</strong> (43.070.496/0001-82).</div>
+
+  <fieldset>
+    <legend>Tomador (cliente)</legend>
+    <label for="cliente">Cliente conhecido</label>
+    <select id="cliente" onchange="preencherCliente()">
+      <option value="">— selecionar ou preencher manualmente —</option>
+      <option value="brasilia">Condomínio Residencial Brasília</option>
+      <option value="nido">Residencial Nido</option>
+      <option value="saintsimon">Cond. Edifício Residencial Saint Simon</option>
+      <option value="moacir">Cond. Edifício Moacir Brandão Pontes</option>
+      <option value="diamant">Cond. Edifício Diamant</option>
+      <option value="cosmos">Condomínio Residencial Cosmos</option>
+      <option value="outro">Outro (novo cliente)</option>
+    </select>
+
+    <label for="tomadorCnpj">CNPJ/CPF</label>
+    <input id="tomadorCnpj" type="text">
+
+    <label for="tomadorNome">Nome / Razão social</label>
+    <input id="tomadorNome" type="text">
+
+    <label for="tomadorEndereco">Endereço</label>
+    <input id="tomadorEndereco" type="text">
+  </fieldset>
+
+  <fieldset>
+    <legend>Serviço (por tópicos)</legend>
+    <label>Itens (descrição + valor de cada um)</label>
+    <div id="topicos"></div>
+    <button type="button" class="add-topico" onclick="adicionarTopico()">+ Adicionar tópico</button>
+
+    <div class="row" style="margin-top:14px;">
+      <div>
+        <label for="valorTotal">Valor total (soma dos itens)</label>
+        <input id="valorTotal" type="text" readonly>
+      </div>
+      <div>
+        <label for="competencia">Competência</label>
+        <div style="display:flex; gap:6px;">
+          <input id="competencia" type="month" style="flex:1;">
+          <button type="button" onclick="setCompetenciaHoje()" style="flex:none; width:auto; padding:8px 10px;">Hoje</button>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Campos fixos (sempre iguais nas últimas notas)</legend>
+    <div class="fixed-item"><span>Código de tributação</span><span>07.05.01 — reparação/conservação/reforma de edifícios</span></div>
+    <div class="fixed-item"><span>ISSQN</span><span>Operação tributável, não retido</span></div>
+    <div class="fixed-item"><span>IBS/CBS</span><span>Não preencher</span></div>
+  </fieldset>
+
+  <div class="actions">
+    <button onclick="gerarResumo()" class="primary">Gerar resumo</button>
+    <button onclick="limpar()">Limpar</button>
+  </div>
+
+  <div id="resumo" style="display:none;">
+    <label for="resumoTexto">Resumo (selecione e copie)<span id="copiado">copiado!</span></label>
+    <textarea id="resumoTexto" readonly onclick="this.select()"></textarea>
+  </div>
+</div>
+
+<script>
+const CLIENTES = {
+  brasilia: { cnpj: "08.293.974/0001-12", nome: "CONDOMINIO RESIDENCIAL BRASILIA", endereco: "MARIO ZANLORENZI, 2070, CAMPO COMPRIDO, Curitiba/PR, CEP 81.230-165" },
+  nido: { cnpj: "39.911.216/0001-44", nome: "RESIDENCIAL NIDO", endereco: "JOAO AURELIO RIBEIRO, 125, BUTIATUVINHA, Curitiba/PR, CEP 82.320-340" },
+  saintsimon: { cnpj: "97.353.338/0001-69", nome: "CONDOMINIO DO EDIFICIO RESIDENCIAL SAINT SIMON", endereco: "NOSSA SENHORA DA LUZ, 317, BACACHERI, Curitiba/PR, CEP 80.035-030" },
+  moacir: { cnpj: "78.944.634/0001-90", nome: "CONDOMINIO EDIFICIO MOACIR BRANDAO PONTES", endereco: "VISCONDE DE GUARAPUAVA, 3067, CENTRO, Curitiba/PR, CEP 80.010-100" },
+  diamant: { cnpj: "81.917.130/0001-95", nome: "CONDOMINIO EDIFICIO DIAMANT", endereco: "ATILIO BORIO, 145, CRISTO REI, Curitiba/PR, CEP 80.050-250" },
+  cosmos: { cnpj: "05.356.976/0001-15", nome: "CONDOMINIO RESIDENCIAL COSMOS", endereco: "PERO KOSCHLA, 447, CAMPO COMPRIDO, Curitiba/PR, CEP 81.220-150" },
+};
+
+function preencherCliente() {
+  const key = document.getElementById('cliente').value;
+  const c = CLIENTES[key];
+  document.getElementById('tomadorCnpj').value = c ? c.cnpj : '';
+  document.getElementById('tomadorNome').value = c ? c.nome : '';
+  document.getElementById('tomadorEndereco').value = c ? c.endereco : '';
+}
+
+function mesAno(valorMonth) {
+  if (!valorMonth) return '';
+  const [ano, mes] = valorMonth.split('-');
+  return mes + '/' + ano;
+}
+
+function parseValor(str) {
+  if (!str) return 0;
+  const limpo = str.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+  const n = parseFloat(limpo);
+  return isNaN(n) ? 0 : n;
+}
+
+function formatarBRL(valor) {
+  return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function atualizarTotal() {
+  let soma = 0;
+  document.querySelectorAll('.topico-valor').forEach(inp => soma += parseValor(inp.value));
+  document.getElementById('valorTotal').value = formatarBRL(soma);
+}
+
+function adicionarTopico(desc, valor) {
+  const container = document.getElementById('topicos');
+  const row = document.createElement('div');
+  row.className = 'topico-row';
+  row.innerHTML =
+    '<input type="text" class="topico-desc" placeholder="Descrição do item">' +
+    '<input type="text" class="topico-valor" placeholder="R$">' +
+    '<button type="button" onclick="removerTopico(this)">&times;</button>';
+  container.appendChild(row);
+  row.querySelector('.topico-desc').value = desc || '';
+  row.querySelector('.topico-valor').value = valor || '';
+  row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', atualizarTotal));
+  atualizarTotal();
+}
+
+function removerTopico(btn) {
+  btn.closest('.topico-row').remove();
+  atualizarTotal();
+}
+
+function gerarResumo() {
+  const topicos = Array.from(document.querySelectorAll('.topico-row')).map(row => {
+    const desc = row.querySelector('.topico-desc').value.trim();
+    const valor = row.querySelector('.topico-valor').value.trim();
+    if (!desc) return null;
+    return valor ? (desc + ' R$' + valor) : desc;
+  }).filter(Boolean);
+
+  const linhas = [
+    'CNPJ/CPF do tomador: ' + document.getElementById('tomadorCnpj').value,
+    'Nome do tomador: ' + document.getElementById('tomadorNome').value,
+    'Endereço do tomador: ' + document.getElementById('tomadorEndereco').value,
+    'Descrição do serviço:',
+    ...topicos.map(t => '  - ' + t),
+    '',
+    'Valor total do serviço: R$ ' + document.getElementById('valorTotal').value,
+    'Competência: ' + mesAno(document.getElementById('competencia').value),
+    '',
+    'Código de tributação: 07.05.01',
+    'ISSQN: Operação tributável, não retido',
+    'IBS/CBS: Não preencher',
+  ];
+  document.getElementById('resumoTexto').value = linhas.join('\n');
+  document.getElementById('resumo').style.display = 'block';
+
+  try {
+    navigator.clipboard.writeText(linhas.join('\n'));
+    const aviso = document.getElementById('copiado');
+    aviso.style.visibility = 'visible';
+    setTimeout(() => aviso.style.visibility = 'hidden', 2000);
+  } catch (e) {}
+}
+
+function limpar() {
+  document.getElementById('cliente').value = '';
+  ['tomadorCnpj','tomadorNome','tomadorEndereco'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('topicos').innerHTML = '';
+  adicionarTopico();
+  document.getElementById('resumo').style.display = 'none';
+}
+
+function setCompetenciaHoje() {
+  const hoje = new Date();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  document.getElementById('competencia').value = hoje.getFullYear() + '-' + mes;
+}
+
+(function iniciar() {
+  setCompetenciaHoje();
+  adicionarTopico();
+})();
+</script>
+</body>
+</html>

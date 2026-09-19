@@ -1,0 +1,24 @@
+# Copie este arquivo para "settings.yaml" (mesma pasta) e preencha com seus dados reais.
+# "settings.yaml" está no .gitignore e nunca deve ser commitado.
+
+emissor:
+  # Usado só pra rotular o log de auditoria. No site, o emitente é o que
+  # estiver logado (nfse.gov.br não tem campo de CNPJ na hora de emitir).
+  # CNPJs conhecidos: Mateus 61.827.278/0001-21, Marcio 43.070.496/0001-82.
+  cnpj: ""              # AJUSTAR: CNPJ de quem vai logar nesta execução
+  razao_social: ""      # AJUSTAR: nome correspondente
+
+plataforma:
+  url_login: ""          # AJUSTAR: link da página de login (se for diferente da de emissão)
+  url_emissao: ""         # AJUSTAR: link exato da página de emissão de NFS-e
+
+servico_padrao:
+  codigo_servico: "07.05.01"  # confirmado em 6 notas reais: reparação/conservação/reforma de edifícios
+  descricao_padrao: ""        # texto padrão da discriminação do serviço, usado como sugestão no prompt
+  issqn_operacao: "Operação Tributável"
+  issqn_retencao: "Não Retido"
+  ibs_cbs: "Não"               # nas últimas notas emitidas (inclusive a mais recente), IBS/CBS ficou em branco
+
+navegador:
+  headless: false          # comece sempre com false para poder acompanhar visualmente
+  chrome_profile_path: ""  # opcional: caminho de um perfil do Chrome, se precisar
