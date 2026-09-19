@@ -16,16 +16,16 @@ def prompt(campo: str, default: str = "") -> str:
 
 def coletar_dados_nota(settings: config.Settings) -> dict:
     hoje = date.today()
-    competencia_padrao = f"{hoje.month:02d}/{hoje.year}"
+    competencia_padrao = hoje.strftime("%d-%m-%Y")
 
     print("\n=== Dados da nota (Enter aceita o valor padrão entre colchetes) ===")
     return {
         "tomador_cnpj_cpf": prompt("CNPJ/CPF do tomador"),
         "tomador_nome": prompt("Nome/Razão social do tomador"),
-        "tomador_endereco": prompt("Endereço do tomador"),
+        "tomador_endereco": prompt("Endereço do tomador (opcional)"),
         "valor": prompt("Valor do serviço (ex: 1500.00)"),
         "descricao": prompt("Descrição do serviço", settings.descricao_padrao),
-        "competencia": prompt("Competência (MM/AAAA)", competencia_padrao),
+        "competencia": prompt("Competência (DD-MM-AAAA)", competencia_padrao),
         "codigo_servico": prompt("Código do serviço", settings.codigo_servico_padrao),
     }
 
@@ -53,13 +53,9 @@ def main() -> int:
         action="store_true",
         help="Pula a confirmação no terminal (use com cuidado, ex. em execução agendada).",
     )
-    parser.add_argument(
-        "--headless", action="store_true", help="Roda o Chrome sem interface visível."
-    )
     args = parser.parse_args()
 
     settings = config.load_settings()
-    credentials = config.load_credentials()
 
     dados_nota = coletar_dados_nota(settings)
     if not args.yes and not confirmar(dados_nota):
@@ -67,10 +63,12 @@ def main() -> int:
         return 1
 
     run_id = audit_log.log_attempt(dados_nota)
-    bot = NFSeBot(settings, headless=args.headless)
+    bot = NFSeBot(settings)
     try:
-        bot.login(credentials.username, credentials.password)
-        bot.fill_form(dados_nota)
+        bot.abrir_nova_nfse()
+        bot.preencher_pessoas(dados_nota)
+        bot.preencher_servico(dados_nota)
+        bot.preencher_valores(dados_nota)
         resultado = bot.submit(dry_run=not args.auto)
         audit_log.log_result(
             run_id, status=resultado.get("status", "desconhecido"), detalhe=str(resultado)

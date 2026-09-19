@@ -1,30 +1,73 @@
 # NFS-e Automation (MEI)
 
 Automação da emissão de NFS-e no **nfse.gov.br** (Emissor Nacional). Projeto
-separado do repositório do jogo GP Manager de propósito — este repo fica
-**local**, sem remoto, para não misturar dados fiscais/credenciais com um
-repositório público.
+separado do repositório do jogo GP Manager de propósito — este repo é
+**público** no GitHub (dados de CNPJ são públicos), mas `config/settings.yaml`
+e `logs/` continuam de fora (`.gitignore`), já que ali entram valores e
+histórico reais de notas.
 
-## Modo atual: preenchimento ao vivo
+Site publicado (usa o [`formulario.html`](formulario.html) como referência
+pra preencher manualmente, sem automação nenhuma):
+https://mateusfalkowski.github.io/nfse-automacao/formulario.html
 
-Fluxo em uso hoje (combinado 2026-09-18): você loga no nfse.gov.br e depois
-faz o captcha + clica em "Emitir" — o Claude preenche os campos da nota pelo
-navegador embutido do app, ao vivo, na conversa. Ninguém além de você toca em
-login/captcha/emissão.
+## Script Python/Selenium (em andamento)
 
-Use [`formulario.html`](formulario.html) (abre local, sem servidor) como
-apoio: escolhe um cliente conhecido ou digita um novo, preenche
-descrição/valor/competência, e gera um resumo pra conferir enquanto preenche
-no site de verdade.
+O script **nunca faz login** — ele se conecta numa janela de Chrome que você
+já abriu e logou manualmente, via `--remote-debugging-port`. Assim a senha
+nunca passa pelo código.
 
-### O que já é fixo (confirmado em 6 notas reais emitidas)
+### Setup
 
-- Código de tributação nacional: **07.05.01** (reparação/conservação/reforma
-  de edifícios e congêneres)
-- ISSQN: Operação Tributável, Não Retido
-- IBS/CBS: sempre em branco/zerado, inclusive na nota mais recente — responder
-  "Não" na pergunta do assistente de emissão mantém o padrão histórico
-  (constatação empírica, não é parecer tributário)
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy config\settings.example.yaml config\settings.yaml
+```
+
+Preencha `config\settings.yaml` (CNPJ pra rótulo do log; a URL de emissão e
+os valores fixos já vêm certos por padrão).
+
+### Uso
+
+1. Abra o Chrome manualmente com depuração remota habilitada:
+   ```bash
+   chrome.exe --remote-debugging-port=9222
+   ```
+2. Faça login normalmente em nfse.gov.br nessa janela.
+3. Rode o script:
+   ```bash
+   python -m src.cli              # dry-run: preenche e tira screenshot, NÃO emite
+   python -m src.cli --auto       # emite de verdade
+   python -m src.cli --auto --yes # sem confirmação no terminal (uso avançado)
+   ```
+
+### Estado dos seletores (`src/nfse_bot.py`)
+
+Mapeados inspecionando o HTML real do assistente de emissão (2026-09-18):
+
+- ✅ Etapa 1 — **Pessoas**: IBS/CBS, competência, tomador (CNPJ/nome), botão
+  avançar. Detalhe: `PreencherInfoIBSCBS` precisa ser respondido antes do
+  campo de competência ficar habilitado; o checkbox de endereço do tomador
+  parece ter estilo customizado (não confirmado se `.click()` do Selenium
+  funciona nele).
+- ⬜ Etapa 2 — **Serviço**: não inspecionada ainda.
+- ⬜ Etapa 3 — **Valores**: não inspecionada ainda.
+- ⬜ Etapa 4 — **Nota** (botão final de emitir): não inspecionada ainda.
+
+Pra completar as etapas que faltam: com o Chrome já conectado e a etapa
+Pessoas preenchida, inspecionar a próxima tela do mesmo jeito (JS no console:
+`Array.from(document.querySelectorAll('input,select,textarea,button')).map(...)`
+pra listar id/name/type de cada campo).
+
+Todo run grava duas linhas em `logs/nfse_emissoes.jsonl` (antes e depois de
+cada tentativa), pra ter rastro mesmo se o processo falhar no meio.
+
+## Modo alternativo: preenchimento ao vivo com o Claude
+
+Antes de escrever o script, o fluxo era: você loga, faz captcha e clica em
+"Emitir"; o Claude preenche os campos ao vivo pelo navegador embutido do app,
+na conversa. Ainda funciona como plano B se o script travar em algo.
 
 ### Dois emitentes
 
@@ -33,48 +76,28 @@ formulário: Mateus (61.827.278/0001-21, próprio) ou Marcio Edson Falkowski
 (43.070.496/0001-82). Confirme em "Meus dados" na home do portal antes de
 preencher qualquer nota.
 
+### O que já é fixo (confirmado em 6 notas reais emitidas)
+
+- Código de tributação nacional: **07.05.01** (reparação/conservação/reforma
+  de edifícios e congêneres)
+- ISSQN: Operação Tributável, Não Retido
+- IBS/CBS: sempre em branco/zerado, inclusive na nota mais recente — responder
+  "Não" mantém o padrão histórico (constatação empírica, não é parecer
+  tributário)
+
 ### Pegadinhas do site
 
 - Ele salva **rascunhos automaticamente** ao começar uma nota nova — confira
   a lista de rascunhos antes de abrir uma nota do zero, pra não duplicar.
 - Link direto pra "Visualizar" uma nota antiga abre em branco; precisa
   navegar clicando pela interface.
-- Uma aba nova no navegador embutido não herda a sessão logada — reaproveite
-  a mesma aba, ou vai pedir login de novo.
-
-## Modo alternativo (pausado): script Python/Selenium
-
-Fica pronto pra retomar quando fizer sentido rodar sem o Claude aberto —
-ideia é o script conectar numa janela de Chrome que você já logou
-manualmente (via `--remote-debugging-port`), sem guardar senha nenhuma.
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-copy config\settings.example.yaml config\settings.yaml
-```
-
-```bash
-python -m src.cli              # dry-run: preenche tudo, tira screenshot, NÃO clica em emitir
-python -m src.cli --auto       # emite de verdade
-python -m src.cli --auto --yes # emite sem a confirmação no terminal (uso em agendamento)
-```
-
-`src/nfse_bot.py` ainda tem os seletores do Selenium como `TODO` — faltam ser
-preenchidos com base na inspeção real da página (pendente: fazer isso com uma
-sessão logada aberta).
-
-Todo run grava duas linhas em `logs/nfse_emissoes.jsonl` (antes e depois de
-cada tentativa), pra ter rastro mesmo se o processo falhar no meio.
+- Uma aba nova no navegador (embutido ou via debugger-address) não herda a
+  sessão logada — reaproveite a mesma janela, ou vai pedir login de novo.
 
 ## Pontos de atenção
 
-- **Captcha**: não ajudo a contornar captcha/bot-detection — essa etapa
-  continua manual de qualquer forma, ao vivo ou via script.
+- **Captcha**: não ajudo a contornar captcha/bot-detection — se aparecer em
+  algum ponto do fluxo, essa etapa continua manual de qualquer forma.
 - **Irreversibilidade**: depois de emitida, a NFS-e normalmente não pode ser
-  cancelada livremente. Por isso o clique final é sempre seu, no modo ao vivo,
-  e o script tem dry-run como padrão.
-- **Senha**: se/quando o script assumir o login, a senha fica só em `.env`
-  (gitignored) e nunca é gravada no log de auditoria.
+  cancelada livremente. Por isso o script tem dry-run como padrão (só emite
+  de verdade com `--auto`), e no modo ao vivo o clique final é sempre seu.

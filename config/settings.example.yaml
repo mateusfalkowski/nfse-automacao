@@ -9,8 +9,7 @@ emissor:
   razao_social: ""      # AJUSTAR: nome correspondente
 
 plataforma:
-  url_login: ""          # AJUSTAR: link da página de login (se for diferente da de emissão)
-  url_emissao: ""         # AJUSTAR: link exato da página de emissão de NFS-e
+  url_emissao: "https://www.nfse.gov.br/EmissorNacional/DPS/Pessoas/NovaNFSe"
 
 servico_padrao:
   codigo_servico: "07.05.01"  # confirmado em 6 notas reais: reparação/conservação/reforma de edifícios
@@ -20,5 +19,6 @@ servico_padrao:
   ibs_cbs: "Não"               # nas últimas notas emitidas (inclusive a mais recente), IBS/CBS ficou em branco
 
 navegador:
-  headless: false          # comece sempre com false para poder acompanhar visualmente
-  chrome_profile_path: ""  # opcional: caminho de um perfil do Chrome, se precisar
+  # Rode o Chrome manualmente antes com: chrome.exe --remote-debugging-port=9222
+  # Loga na nfse.gov.br nessa janela, aí sim roda o script — ele conecta nela.
+  debugger_address: "127.0.0.1:9222"
