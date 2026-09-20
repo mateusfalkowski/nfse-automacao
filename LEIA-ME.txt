@@ -12,6 +12,9 @@ Por padrão ele faz um "dry-run" (preenche e para antes de emitir).
 Pra emitir de verdade, feche e rode de novo abrindo um terminal e
 digitando: EmitirNFSe.exe --auto
 
+No final de cada nota ele pergunta se você quer emitir outra — pode
+colar o próximo resumo direto, sem fechar e abrir tudo de novo.
+
 Formulário pra gerar o resumo:
 https://mateusfalkowski.github.io/nfse-automacao/formulario.html
 

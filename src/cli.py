@@ -96,39 +96,48 @@ def main() -> int:
     args = parser.parse_args()
 
     settings = config.load_settings()
-    dados_nota = parse_resumo(ler_bloco_colado(), settings)
 
-    if not args.yes and not confirmar(dados_nota):
-        print("Cancelado pelo usuário.")
-        return 1
-
-    run_id = audit_log.log_attempt(dados_nota)
     bot = None
+    exit_code = 0
     try:
-        bot = NFSeBot(settings)
-        bot.abrir_nova_nfse()
-        bot.preencher_pessoas(dados_nota)
-        bot.preencher_servico(dados_nota)
-        bot.preencher_valores(dados_nota)
-        resultado = bot.submit(dry_run=not args.auto)
-        audit_log.log_result(
-            run_id, status=resultado.get("status", "desconhecido"), detalhe=str(resultado)
-        )
-        print(f"\nConcluído: {resultado}")
-        return 0
-    except Exception as exc:
-        audit_log.log_result(run_id, status="erro", detalhe=str(exc))
-        print(
-            "\nErro durante a automação. Se a mensagem abaixo mencionar conexão "
-            "com o Chrome, confira se ele foi aberto pelo IniciarNFSe.bat/"
-            "EmitirNFSe.bat (não pelo ícone normal) e se você já fez login nessa "
-            f"janela.\nDetalhe técnico: {exc}",
-            file=sys.stderr,
-        )
-        return 1
+        while True:
+            dados_nota = parse_resumo(ler_bloco_colado(), settings)
+
+            if not args.yes and not confirmar(dados_nota):
+                print("Cancelado pelo usuário.")
+            else:
+                run_id = audit_log.log_attempt(dados_nota)
+                try:
+                    if bot is None:
+                        bot = NFSeBot(settings)
+                    bot.abrir_nova_nfse()
+                    bot.preencher_pessoas(dados_nota)
+                    bot.preencher_servico(dados_nota)
+                    bot.preencher_valores(dados_nota)
+                    resultado = bot.submit(dry_run=not args.auto)
+                    audit_log.log_result(
+                        run_id, status=resultado.get("status", "desconhecido"), detalhe=str(resultado)
+                    )
+                    print(f"\nConcluído: {resultado}")
+                except Exception as exc:
+                    audit_log.log_result(run_id, status="erro", detalhe=str(exc))
+                    print(
+                        "\nErro durante a automação. Se a mensagem abaixo mencionar conexão "
+                        "com o Chrome, confira se ele foi aberto pelo IniciarNFSe.bat/"
+                        "EmitirNFSe.bat (não pelo ícone normal) e se você já fez login nessa "
+                        f"janela.\nDetalhe técnico: {exc}",
+                        file=sys.stderr,
+                    )
+                    exit_code = 1
+
+            de_novo = input("\nDeseja emitir outra nota? [s/N]: ").strip().lower()
+            if de_novo != "s":
+                break
     finally:
         if bot is not None:
             bot.close()
+
+    return exit_code
 
 
 if __name__ == "__main__":
