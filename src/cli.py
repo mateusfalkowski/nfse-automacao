@@ -103,8 +103,9 @@ def main() -> int:
         return 1
 
     run_id = audit_log.log_attempt(dados_nota)
-    bot = NFSeBot(settings)
+    bot = None
     try:
+        bot = NFSeBot(settings)
         bot.abrir_nova_nfse()
         bot.preencher_pessoas(dados_nota)
         bot.preencher_servico(dados_nota)
@@ -117,10 +118,17 @@ def main() -> int:
         return 0
     except Exception as exc:
         audit_log.log_result(run_id, status="erro", detalhe=str(exc))
-        print(f"\nErro durante a automação: {exc}", file=sys.stderr)
+        print(
+            "\nErro durante a automação. Se a mensagem abaixo mencionar conexão "
+            "com o Chrome, confira se ele foi aberto pelo IniciarNFSe.bat/"
+            "EmitirNFSe.bat (não pelo ícone normal) e se você já fez login nessa "
+            f"janela.\nDetalhe técnico: {exc}",
+            file=sys.stderr,
+        )
         return 1
     finally:
-        bot.close()
+        if bot is not None:
+            bot.close()
 
 
 if __name__ == "__main__":
